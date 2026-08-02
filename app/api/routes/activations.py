@@ -107,7 +107,10 @@ async def validate(
         raise
 
     active = await count_active_activations(session, license.id)
-    if license.expires_at is not None and license.expires_at < datetime.now(timezone.utc):
+    expires_at = license.expires_at
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at is not None and expires_at < datetime.now(timezone.utc):
         return ValidateResponse(valid=False, reason="licenca expirada")
 
     return ValidateResponse(

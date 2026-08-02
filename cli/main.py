@@ -83,7 +83,7 @@ def print_license_row(item: dict, show_key: bool = False) -> None:
     table.add_row("Cliente", item["customer_name"])
     table.add_row("E-mail", item.get("email") or "-")
     table.add_row("Tier", item["tier"])
-    table.add_row("Expira em", item.get("expires_at") or "perpétua")
+    table.add_row("Expira em", item.get("expires_at") or "nao definida")
     table.add_row("Max ativacoes", str(item["max_activations"]))
     table.add_row("Revogada", "sim" if item["revoked"] else "nao")
     table.add_row("Criada em", item["created_at"])
@@ -336,7 +336,7 @@ def validate(key: str = typer.Option(..., prompt=True)):
     if data["valid"]:
         console.print("[green]Licenca VALIDA.[/green]")
         console.print(f"  Cliente: {data['customer_name']} | Tier: {data['tier']}")
-        console.print(f"  Expira: {data.get('expires_at') or 'perpétua'}")
+        console.print(f"  Expira: {data.get('expires_at') or 'nao definida'}")
         console.print(f"  Ativacoes ativas: {data['active_activations']}/{data['max_activations']}")
     else:
         console.print(f"[red]Licenca INVALIDA: {data.get('reason')}[/red]")

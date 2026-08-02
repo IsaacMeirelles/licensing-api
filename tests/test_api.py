@@ -1,4 +1,14 @@
+import datetime as dt
+import time
+
 import pytest
+
+
+def _parse_dt(value: str) -> dt.datetime:
+    parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.timezone.utc)
+    return parsed
 
 
 async def _create_license(client, admin_headers, **overrides):
@@ -218,3 +228,26 @@ async def test_duplicate_username_conflict(client, admin_headers):
         headers=admin_headers,
     )
     assert resp.status_code == 409
+
+
+async def test_default_expiry_is_one_year(client, admin_headers):
+    before = dt.datetime.now(dt.timezone.utc)
+    lic = await _create_license(client, admin_headers)
+
+    expiry = _parse_dt(lic["expires_at"])
+    assert before + dt.timedelta(days=364) < expiry < before + dt.timedelta(days=366)
+
+    from app.core.signing import verify_license
+
+    payload = verify_license(lic["key"])
+    assert "exp" in payload
+    assert abs(payload["exp"] - int(expiry.timestamp())) < 2
+
+
+async def test_custom_expiry_is_respected(client, admin_headers):
+    custom = dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=30)
+    lic = await _create_license(
+        client, admin_headers, expires_at=custom.isoformat()
+    )
+    expiry = _parse_dt(lic["expires_at"])
+    assert abs((expiry - custom).total_seconds()) < 2

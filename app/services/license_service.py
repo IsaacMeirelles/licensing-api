@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
@@ -36,13 +36,20 @@ def _assign(license: License, data: dict) -> None:
         setattr(license, field, value)
 
 
+DEFAULT_VALIDITY_DAYS = 365
+
+
+def _default_expiry() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(days=DEFAULT_VALIDITY_DAYS)
+
+
 async def create_license(session: AsyncSession, data: LicenseCreate) -> License:
     license = License(
         id=uuid4(),
         customer_name=data.customer_name,
         email=str(data.email) if data.email else None,
         tier=data.tier,
-        expires_at=data.expires_at,
+        expires_at=data.expires_at or _default_expiry(),
         max_activations=data.max_activations,
     )
     license.key = sign_license(_build_payload(license))

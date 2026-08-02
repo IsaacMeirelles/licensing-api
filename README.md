@@ -25,7 +25,7 @@ O payload contém os dados da licença:
 | `sub` | nome do cliente |
 | `lic` | UUID da licença no banco |
 | `iat` | momento da emissão |
-| `exp` | expiração (epoch); ausente = perpétua |
+| `exp` | expiração (epoch); se não informada na emissão, vale **1 ano** |
 | `tier` | tipo de licença (standard/premium/...) |
 | `max` | limite de ativações |
 
@@ -141,7 +141,7 @@ curl http://localhost:8000/healthz
 | GET | `/api/v1/admin/admins/{id}` | detalhe de um admin |
 | PATCH | `/api/v1/admin/admins/{id}` | edita usuário/senha de um admin |
 | DELETE | `/api/v1/admin/admins/{id}` | exclui admin (não permite excluir a si mesmo) |
-| POST | `/api/v1/admin/licenses` | emite licença → retorna a **chave assinada** |
+| POST | `/api/v1/admin/licenses` | emite licença (sem `expires_at` → vigência de 1 ano) → retorna a **chave assinada** |
 | GET | `/api/v1/admin/licenses` | lista licenças |
 | GET | `/api/v1/admin/licenses/{id}` | detalhe de uma licença |
 | GET | `/api/v1/admin/licenses/{id}/key` | recupera a chave assinada |
