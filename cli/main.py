@@ -206,9 +206,13 @@ def license_create(
     contact_email: str | None = typer.Option(None),
     contact_phone: str | None = typer.Option(None),
     tier: str = typer.Option("standard"),
+    anos: int = typer.Option(1, min=1, max=5, help="pacote em anos (1, 2, 3 ou 5)"),
     max_activations: int = typer.Option(1, min=1),
 ):
     """Emite uma licenca e mostra a chave assinada."""
+    if anos not in (1, 2, 3, 5):
+        console.print("[red]O pacote deve ser de 1, 2, 3 ou 5 anos.[/red]")
+        raise typer.Exit(1)
     resp = call(
         "POST",
         "/api/v1/admin/licenses",
@@ -219,6 +223,7 @@ def license_create(
             "contact_email": contact_email,
             "contact_phone": contact_phone,
             "tier": tier,
+            "validity_years": anos,
             "max_activations": max_activations,
         },
     )
@@ -276,6 +281,24 @@ def license_revoke(
     )
     estado = "revogada" if revoke else "desrevogada"
     console.print(f"[green]Licenca {license_id} {estado}.[/green]")
+    print_license_row(resp.json())
+
+
+@licenses_app.command("renew")
+def license_renew(
+    license_id: str,
+    anos: int = typer.Option(..., min=1, max=5, help="pacote em anos (1, 2, 3 ou 5)"),
+):
+    """Renova/estende a vigencia a partir do vencimento atual."""
+    if anos not in (1, 2, 3, 5):
+        console.print("[red]O pacote deve ser de 1, 2, 3 ou 5 anos.[/red]")
+        raise typer.Exit(1)
+    resp = call(
+        "POST",
+        f"/api/v1/admin/licenses/{license_id}/renew",
+        json={"validity_years": anos},
+    )
+    console.print(f"[green]Licenca renovada por mais {anos} ano(s).[/green]")
     print_license_row(resp.json())
 
 

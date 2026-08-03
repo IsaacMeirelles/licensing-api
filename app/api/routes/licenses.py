@@ -10,8 +10,18 @@ from app.models.activation import Activation
 from app.models.admin import Admin
 from app.models.license import License
 from app.schemas.activation import ActivationRead
-from app.schemas.license import LicenseCreate, LicenseRead, LicenseReadWithKey, LicenseUpdate
-from app.services.license_service import create_license, update_license
+from app.schemas.license import (
+    LicenseCreate,
+    LicenseRead,
+    LicenseReadWithKey,
+    LicenseRenew,
+    LicenseUpdate,
+)
+from app.services.license_service import (
+    create_license,
+    renew_license,
+    update_license,
+)
 
 router = APIRouter(dependencies=[Depends(get_current_admin)])
 
@@ -68,6 +78,18 @@ async def update_license_endpoint(
     if license is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="licenca nao encontrada")
     return await update_license(session, license, payload)
+
+
+@router.post("/licenses/{license_id}/renew", response_model=LicenseReadWithKey)
+async def renew_license_endpoint(
+    license_id: UUID,
+    payload: LicenseRenew,
+    session: AsyncSession = Depends(get_session),
+):
+    license = await session.get(License, license_id)
+    if license is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="licenca nao encontrada")
+    return await renew_license(session, license, payload.validity_years)
 
 
 @router.delete("/licenses/{license_id}", status_code=status.HTTP_204_NO_CONTENT)

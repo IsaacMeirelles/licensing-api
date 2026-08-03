@@ -244,13 +244,40 @@ async def test_default_expiry_is_one_year(client, admin_headers):
     assert abs(payload["exp"] - int(expiry.timestamp())) < 2
 
 
-async def test_custom_expiry_is_respected(client, admin_headers):
-    custom = dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=30)
-    lic = await _create_license(
-        client, admin_headers, expires_at=custom.isoformat()
+async def test_validity_years_packages(client, admin_headers):
+    for years in (1, 2, 3, 5):
+        before = dt.datetime.now(dt.timezone.utc)
+        lic = await _create_license(
+            client, admin_headers, validity_years=years
+        )
+        expiry = _parse_dt(lic["expires_at"])
+        assert before + dt.timedelta(days=365 * years - 1) < expiry < before + dt.timedelta(days=365 * years + 1)
+
+    resp = await client.post(
+        "/api/v1/admin/licenses",
+        json={"customer_name": "Invalido", "validity_years": 4},
+        headers=admin_headers,
     )
-    expiry = _parse_dt(lic["expires_at"])
-    assert abs((expiry - custom).total_seconds()) < 2
+    assert resp.status_code == 422
+
+
+async def test_renew_extends_from_current_expiry(client, admin_headers):
+    lic = await _create_license(client, admin_headers, validity_years=1)
+    original_expiry = _parse_dt(lic["expires_at"])
+    original_key = lic["key"]
+
+    resp = await client.post(
+        f"/api/v1/admin/licenses/{lic['id']}/renew",
+        json={"validity_years": 2},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    new_expiry = _parse_dt(body["expires_at"])
+
+    expected = original_expiry + dt.timedelta(days=365 * 2)
+    assert abs((new_expiry - expected).total_seconds()) < 2
+    assert body["key"] != original_key
 
 
 async def test_contact_fields(client, admin_headers):

@@ -36,11 +36,17 @@ def _assign(license: License, data: dict) -> None:
         setattr(license, field, value)
 
 
-DEFAULT_VALIDITY_DAYS = 365
+DEFAULT_VALIDITY_YEARS = 1
 
 
-def _default_expiry() -> datetime:
-    return datetime.now(timezone.utc) + timedelta(days=DEFAULT_VALIDITY_DAYS)
+def _expiry_for_years(years: int) -> datetime:
+    return datetime.now(timezone.utc) + timedelta(days=365 * years)
+
+
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 async def create_license(session: AsyncSession, data: LicenseCreate) -> License:
@@ -52,7 +58,7 @@ async def create_license(session: AsyncSession, data: LicenseCreate) -> License:
         contact_email=str(data.contact_email) if data.contact_email else None,
         contact_phone=data.contact_phone,
         tier=data.tier,
-        expires_at=data.expires_at or _default_expiry(),
+        expires_at=_expiry_for_years(data.validity_years),
         max_activations=data.max_activations,
     )
     license.key = sign_license(_build_payload(license))
@@ -72,6 +78,19 @@ async def update_license(
     _assign(license, fields)
     if PAYLOAD_FIELDS & set(fields):
         license.key = sign_license(_build_payload(license))
+    await session.commit()
+    await session.refresh(license)
+    return license
+
+
+async def renew_license(
+    session: AsyncSession, license: License, validity_years: int
+) -> License:
+    """Estende a vigência a partir do vencimento atual (ou de hoje se expirada)."""
+    base = _as_utc(license.expires_at) if license.expires_at is not None else datetime.now(timezone.utc)
+    base = max(base, datetime.now(timezone.utc))
+    license.expires_at = base + timedelta(days=365 * validity_years)
+    license.key = sign_license(_build_payload(license))
     await session.commit()
     await session.refresh(license)
     return license

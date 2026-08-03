@@ -1,9 +1,12 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 DEFAULT_TIERS = ("standard", "premium", "enterprise")
+
+PACKAGE_YEARS = Literal[1, 2, 3, 5]
 
 
 class LicenseCreate(BaseModel):
@@ -13,8 +16,12 @@ class LicenseCreate(BaseModel):
     contact_email: EmailStr | None = None
     contact_phone: str | None = Field(default=None, max_length=255)
     tier: str = Field(default="standard", pattern="^[a-z0-9_-]+$")
-    expires_at: datetime | None = None
+    validity_years: PACKAGE_YEARS = 1
     max_activations: int = Field(default=1, ge=1, le=10000)
+
+
+class LicenseRenew(BaseModel):
+    validity_years: PACKAGE_YEARS
 
 
 class LicenseUpdate(BaseModel):

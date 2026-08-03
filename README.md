@@ -25,7 +25,7 @@ O payload contém os dados da licença:
 | `sub` | nome do cliente |
 | `lic` | UUID da licença no banco |
 | `iat` | momento da emissão |
-| `exp` | expiração (epoch); se não informada na emissão, vale **1 ano** |
+| `exp` | expiração (epoch); determinada pelo pacote de **1, 2, 3 ou 5 anos** |
 | `tier` | tipo de licença (standard/premium/...) |
 | `max` | limite de ativações |
 
@@ -100,7 +100,8 @@ licensing-api/
 | `contact_email` | e-mail do contato |
 | `contact_phone` | telefone do contato |
 | `tier` | tipo de licença (standard/premium/enterprise) |
-| `expires_at` | data de expiração (sem valor → 1 ano) |
+| `validity_years` | pacote comprado: **1, 2, 3 ou 5 anos** (define `expires_at` na emissão) |
+| `expires_at` | data de expiração (calculada do pacote; renovação soma ao vencimento atual) |
 | `max_activations` | limite de máquinas ativas |
 | `revoked` | se a licença está revogada |
 
@@ -157,11 +158,12 @@ curl http://localhost:8000/healthz
 | GET | `/api/v1/admin/admins/{id}` | detalhe de um admin |
 | PATCH | `/api/v1/admin/admins/{id}` | edita usuário/senha de um admin |
 | DELETE | `/api/v1/admin/admins/{id}` | exclui admin (não permite excluir a si mesmo) |
-| POST | `/api/v1/admin/licenses` | emite licença (sem `expires_at` → vigência de 1 ano) → retorna a **chave assinada** |
+| POST | `/api/v1/admin/licenses` | emite licença (pacote de **1/2/3/5 anos**) → retorna a **chave assinada** |
 | GET | `/api/v1/admin/licenses` | lista licenças |
 | GET | `/api/v1/admin/licenses/{id}` | detalhe de uma licença |
 | GET | `/api/v1/admin/licenses/{id}/key` | recupera a chave assinada |
 | PATCH | `/api/v1/admin/licenses/{id}` | edita (re-assina a chave só se cliente/tier/max/expiração mudarem) |
+| POST | `/api/v1/admin/licenses/{id}/renew` | renova somando **1/2/3/5 anos** ao vencimento atual (re-assina a chave) |
 | DELETE | `/api/v1/admin/licenses/{id}` | exclui |
 | GET | `/api/v1/admin/licenses/{id}/activations` | lista ativações da licença |
 | DELETE | `/api/v1/admin/licenses/{id}/activations/{aid}` | revoga uma ativação (libera a máquina) |
@@ -226,8 +228,9 @@ licensing-cli admins delete <id>
 licensing-cli licenses list
 licensing-cli licenses show <id>
 licensing-cli licenses key <id>           # recupera a chave assinada (saída crua)
-licensing-cli licenses create --customer "Empresa XPTO" --email contato@xpto.com --tier enterprise --max-activations 2
-licensing-cli licenses create --customer "Empresa Acme LTDA" --contact-name "Maria Silva" --contact-email maria@acme.com --contact-phone "+55 11 99999-0000"
+licensing-cli licenses create --customer "Empresa XPTO" --email contato@xpto.com --tier enterprise --max-activations 2 --anos 2
+licensing-cli licenses create --customer "Empresa Acme LTDA" --contact-name "Maria Silva" --contact-email maria@acme.com --contact-phone "+55 11 99999-0000" --anos 5
+licensing-cli licenses renew <id> --anos 2   # estende do vencimento atual
 licensing-cli licenses revoke <id>        # revoga (a chave NÃO muda)
 licensing-cli licenses revoke <id> --no-revoke   # desrevoga
 licensing-cli licenses activations <id>   # máquinas ativas
