@@ -48,6 +48,9 @@ async def create_license(session: AsyncSession, data: LicenseCreate) -> License:
         id=uuid4(),
         customer_name=data.customer_name,
         email=str(data.email) if data.email else None,
+        contact_name=data.contact_name,
+        contact_email=str(data.contact_email) if data.contact_email else None,
+        contact_phone=data.contact_phone,
         tier=data.tier,
         expires_at=data.expires_at or _default_expiry(),
         max_activations=data.max_activations,
@@ -63,8 +66,9 @@ async def update_license(
     session: AsyncSession, license: License, data: LicenseUpdate
 ) -> License:
     fields = data.model_dump(exclude_unset=True)
-    if fields.get("email") is not None:
-        fields["email"] = str(fields["email"])
+    for email_field in ("email", "contact_email"):
+        if fields.get(email_field) is not None:
+            fields[email_field] = str(fields[email_field])
     _assign(license, fields)
     if PAYLOAD_FIELDS & set(fields):
         license.key = sign_license(_build_payload(license))

@@ -90,6 +90,22 @@ licensing-api/
 └── pyproject.toml             # dependências (uv)
 ```
 
+### Campos da licença
+
+| Campo | Descrição |
+|---|---|
+| `customer_name` | **licenciado** (empresa ou pessoa titular da licença) |
+| `email` | e-mail do licenciado |
+| `contact_name` | **contato para renovação** (geralmente uma pessoa) |
+| `contact_email` | e-mail do contato |
+| `contact_phone` | telefone do contato |
+| `tier` | tipo de licença (standard/premium/enterprise) |
+| `expires_at` | data de expiração (sem valor → 1 ano) |
+| `max_activations` | limite de máquinas ativas |
+| `revoked` | se a licença está revogada |
+
+Os campos de contato servem para você localizar e negociar a **renovação** e **não entram na chave assinada** — alterá-los não invalida a chave que os clientes já têm.
+
 ---
 
 ## Como rodar
@@ -211,6 +227,7 @@ licensing-cli licenses list
 licensing-cli licenses show <id>
 licensing-cli licenses key <id>           # recupera a chave assinada (saída crua)
 licensing-cli licenses create --customer "Empresa XPTO" --email contato@xpto.com --tier enterprise --max-activations 2
+licensing-cli licenses create --customer "Empresa Acme LTDA" --contact-name "Maria Silva" --contact-email maria@acme.com --contact-phone "+55 11 99999-0000"
 licensing-cli licenses revoke <id>        # revoga (a chave NÃO muda)
 licensing-cli licenses revoke <id> --no-revoke   # desrevoga
 licensing-cli licenses activations <id>   # máquinas ativas

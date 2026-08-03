@@ -82,6 +82,9 @@ def print_license_row(item: dict, show_key: bool = False) -> None:
     table.add_column("Valor")
     table.add_row("Cliente", item["customer_name"])
     table.add_row("E-mail", item.get("email") or "-")
+    table.add_row("Contato", item.get("contact_name") or "-")
+    table.add_row("E-mail do contato", item.get("contact_email") or "-")
+    table.add_row("Telefone do contato", item.get("contact_phone") or "-")
     table.add_row("Tier", item["tier"])
     table.add_row("Expira em", item.get("expires_at") or "nao definida")
     table.add_row("Max ativacoes", str(item["max_activations"]))
@@ -199,6 +202,9 @@ def admin_password(
 def license_create(
     customer: str = typer.Option(..., prompt=True),
     email: str | None = typer.Option(None),
+    contact_name: str | None = typer.Option(None),
+    contact_email: str | None = typer.Option(None),
+    contact_phone: str | None = typer.Option(None),
     tier: str = typer.Option("standard"),
     max_activations: int = typer.Option(1, min=1),
 ):
@@ -209,6 +215,9 @@ def license_create(
         json={
             "customer_name": customer,
             "email": email,
+            "contact_name": contact_name,
+            "contact_email": contact_email,
+            "contact_phone": contact_phone,
             "tier": tier,
             "max_activations": max_activations,
         },

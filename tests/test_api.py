@@ -251,3 +251,36 @@ async def test_custom_expiry_is_respected(client, admin_headers):
     )
     expiry = _parse_dt(lic["expires_at"])
     assert abs((expiry - custom).total_seconds()) < 2
+
+
+async def test_contact_fields(client, admin_headers):
+    lic = await _create_license(
+        client,
+        admin_headers,
+        customer_name="Empresa Acme LTDA",
+        contact_name="Maria Silva",
+        contact_email="maria@acme.com",
+        contact_phone="+55 11 99999-0000",
+    )
+    assert lic["customer_name"] == "Empresa Acme LTDA"
+    assert lic["contact_name"] == "Maria Silva"
+    assert lic["contact_email"] == "maria@acme.com"
+    assert lic["contact_phone"] == "+55 11 99999-0000"
+
+    resp = await client.get(f"/api/v1/admin/licenses/{lic['id']}", headers=admin_headers)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["contact_name"] == "Maria Silva"
+    assert body["contact_phone"] == "+55 11 99999-0000"
+
+
+async def test_update_contact_does_not_resign_key(client, admin_headers):
+    lic = await _create_license(client, admin_headers)
+    resp = await client.patch(
+        f"/api/v1/admin/licenses/{lic['id']}",
+        json={"contact_phone": "+55 11 88888-1111"},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 200
+    assert resp.json()["key"] == lic["key"]
+    assert resp.json()["contact_phone"] == "+55 11 88888-1111"

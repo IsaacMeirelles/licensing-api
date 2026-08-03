@@ -16,6 +16,9 @@ class License(Base, UUIDMixin, TimestampMixin):
     key: Mapped[str] = mapped_column(Text, unique=True, index=True)
     customer_name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(255), nullable=True)
     tier: Mapped[str] = mapped_column(String(32), default="standard")
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
