@@ -40,6 +40,16 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    networks:
+      default: {}
+      webapp-network:
+        aliases:
+          - licensing-api
+
+networks:
+  webapp-network:
+    external: true
+    name: webapp_webapp-network
 
 volumes:
   pgdata:
